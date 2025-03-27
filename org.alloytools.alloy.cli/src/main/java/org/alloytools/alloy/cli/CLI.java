@@ -204,7 +204,6 @@ public class CLI extends Env {
 			}
 		}
 		OutputTrace trace = new OutputTrace(quiet || outdir == null ? null : stderr);
-		Map<CommandInfo, A4Solution> answers = new TreeMap<>();
 		int n = 0;
 
 		int repeat = options.repeat(1);
@@ -281,9 +280,9 @@ public class CLI extends Env {
 						trace.format(" expects=%s", c.expects);
 						error("'%s' was satisfied against expectation",c);
 					}
-
-					if (options.evaluator() && !answers.isEmpty()) {
-						evaluator(world, answers);
+					trace.format("\n");
+					if (options.evaluator()) {
+						evaluator(world, solution);
 					}
 				}
 				n++;
@@ -358,19 +357,15 @@ public class CLI extends Env {
 			return parts[0];
 	}
 
-	private void evaluator(CompModule world, Map<CommandInfo, A4Solution> answers) throws Exception {
-		for (Entry<CommandInfo, A4Solution> s : answers.entrySet()) {
-			A4Solution sol = s.getValue();
-			if (sol.satisfiable()) {
-				stdout.println("Evaluator for " + s.getKey().command);
-				stdout.flush();
-				Evaluator e = new Evaluator(world, sol, stdin, stdout);
-				String lastCommand = e.loop();
-				if (lastCommand.equals("/exit"))
-					break;
-			}
+	private void evaluator(CompModule world, A4Solution sol) throws Exception {
+		if (sol.satisfiable()) {
+			stdout.println("Evaluator for latest command");
+			stdout.flush();
+			Evaluator e = new Evaluator(world, sol, stdin, stdout);
+			String lastCommand = e.loop();
+			if (lastCommand == null || lastCommand.equals("/exit"))
+				return;
 		}
-		stdout.println("bye");
 	}
 
 	@Arguments(arg = "path")
